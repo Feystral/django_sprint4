@@ -150,3 +150,8 @@ media/
 
 sent_emails/
 
+
+#static
+blogicum/static_files/
+
+/sent_emails/
