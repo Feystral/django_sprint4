@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Post, Comment
+from .models import Post, Comment, Category
 
 
 class PostForm(forms.ModelForm):
@@ -10,6 +10,11 @@ class PostForm(forms.ModelForm):
         widgets = {
             'pub_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['category'].queryset = (Category.objects.filter
+                                            (is_published=True))
 
 
 class CommentForm(forms.ModelForm):
