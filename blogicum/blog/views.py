@@ -184,9 +184,6 @@ def edit_post(request, post_id):
 
 @login_required
 def delete_post(request, post_id):
-    """
-    Удаление поста, если он существует и принадлежит текущему пользователю.
-    """
     post = error_404_or_object(request, Post, id=post_id)
     if isinstance(post, HttpResponse):
         return post
@@ -202,9 +199,6 @@ def delete_post(request, post_id):
 
 @login_required
 def delete_comment(request, post_id, comment_id):
-    """
-    Удаление комментария, если он принадлежит текущему пользователю.
-    """
     comment = error_404_or_object(request, Comment, id=comment_id)
     if isinstance(comment, HttpResponse):
         return comment
