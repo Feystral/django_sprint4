@@ -5,12 +5,18 @@ from django.contrib.auth.forms import UserChangeForm, PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.core.paginator import Paginator
 from django.utils import timezone
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import DeleteView
-from django.urls import reverse_lazy
+from django.http import Http404, HttpResponse
 
 from .models import Category, Post, Comment
 from .forms import PostForm, CommentForm
+
+
+def error_404_or_object(request, model, *args, **kwargs):
+    try:
+        obj = get_object_or_404(model, *args, **kwargs)
+        return obj
+    except Http404:
+        return render(request, 'pages/404.html', status=404)
 
 
 def get_filtered_posts(manager):
@@ -33,7 +39,19 @@ def index(request):
 
 
 def post_detail(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
+    post = error_404_or_object(request, Post, id=post_id)
+    if isinstance(post, HttpResponse):
+        return post
+
+    if post.pub_date > timezone.now() and post.author != request.user:
+        return render(request, 'pages/404.html', status=404)
+
+    if not post.category.is_published and post.author != request.user:
+        return render(request, 'pages/404.html', status=404)
+
+    if not post.is_published and post.author != request.user:
+        return render(request, 'pages/404.html', status=404)
+
     comments = post.comments.all().order_by('created_at')
 
     if request.method == 'POST':
@@ -59,12 +77,19 @@ def post_detail(request, post_id):
 
 
 def category_posts(request, category_slug):
-    category = get_object_or_404(Category, slug=category_slug,
-                                 is_published=True)
-    posts = (category.posts.filter(is_published=True,
-                                   pub_date__lte=timezone.now())
-             .select_related('author',
-                             'category').prefetch_related('comments'))
+    category = error_404_or_object(request, Category, slug=category_slug,
+                                   is_published=True)
+
+    if isinstance(category, HttpResponse):
+        return category
+
+    try:
+        posts = (category.posts.filter(is_published=True,
+                                       pub_date__lte=timezone.now())
+                 .select_related('author',
+                                 'category').prefetch_related('comments'))
+    except Http404:
+        return render(request, 'pages/404.html', status=404)
 
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
@@ -77,7 +102,10 @@ def category_posts(request, category_slug):
 
 
 def profile(request, username):
-    user = get_object_or_404(User, username=username)
+    user = error_404_or_object(request, User, username=username)
+    if isinstance(user, HttpResponse):
+        return user
+
     posts = Post.objects.filter(author=user)
     is_owner = request.user.is_authenticated and request.user == user
     paginator = Paginator(posts, 10)
@@ -139,7 +167,9 @@ def create_post(request):
 
 @login_required
 def edit_post(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
+    post = error_404_or_object(request, Post, id=post_id)
+    if isinstance(post, HttpResponse):
+        return post
     if post.author != request.user:
         return redirect('blog:post_detail', post_id=post.id)
     if request.method == 'POST':
@@ -152,49 +182,51 @@ def edit_post(request, post_id):
     return render(request, 'blog/create.html', {'form': form, 'is_edit': True})
 
 
-class DeletePostView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Post
-    template_name = 'blog/create.html'
-    pk_url_kwarg = 'post_id'
-    context_object_name = 'post'
+@login_required
+def delete_post(request, post_id):
+    """
+    Удаление поста, если он существует и принадлежит текущему пользователю.
+    """
+    post = error_404_or_object(request, Post, id=post_id)
+    if isinstance(post, HttpResponse):
+        return post
+    if post.author != request.user:
+        raise Http404("Пост не найден")
 
-    def test_func(self):
-        """Проверяем, является ли пользователь автором поста."""
-        post = self.get_object()
-        return post.author == self.request.user
+    if request.method == "POST":
+        post.delete()
+        return redirect('blog:index')
 
-    def get_success_url(self):
-        """Указываем, куда перенаправить пользователя после удаления."""
-        return reverse_lazy('blog:index')
+    return render(request, 'blog/create.html', {'post': post})
 
 
-class DeleteCommentView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Comment
-    template_name = 'blog/comment.html'
-    pk_url_kwarg = 'comment_id'
-    context_object_name = 'comment'
+@login_required
+def delete_comment(request, post_id, comment_id):
+    """
+    Удаление комментария, если он принадлежит текущему пользователю.
+    """
+    comment = error_404_or_object(request, Comment, id=comment_id)
+    if isinstance(comment, HttpResponse):
+        return comment
 
-    def test_func(self):
-        """Проверяем, является ли пользователь автором комментария."""
-        comment = self.get_object()
-        return comment.author == self.request.user
+    if comment.author != request.user:
+        raise Http404("Комментарий не найден")
 
-    def get_context_data(self, **kwargs):
-        """Добавляем контекст для шаблона."""
-        context = super().get_context_data(**kwargs)
-        comment = self.get_object()
-        context['comment'] = comment
-        context['delete'] = True
+    if request.method == "POST":
+        comment.delete()
+        return redirect('blog:post_detail', post_id=post_id)
 
-    def get_success_url(self):
-        """Указываем, куда перенаправить пользователя после удаления."""
-        post_id = self.kwargs['post_id']
-        return reverse_lazy('blog:post_detail', kwargs={'post_id': post_id})
+    return render(request, 'blog/comment.html', {
+        'comment': comment,
+        'delete': True,
+    })
 
 
 @login_required
 def add_comment(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
+    post = error_404_or_object(request, Post, id=post_id)
+    if isinstance(post, HttpResponse):
+        return post
 
     if request.method == 'POST':
         form = CommentForm(request.POST)
@@ -212,8 +244,13 @@ def add_comment(request, post_id):
 
 @login_required
 def edit_comment(request, post_id, comment_id):
-    post = get_object_or_404(Post, id=post_id)
-    comment = get_object_or_404(Comment, id=comment_id, post_id=post_id)
+    post = error_404_or_object(request, Post, id=post_id)
+    if isinstance(post, HttpResponse):
+        return post
+    comment = error_404_or_object(request, Comment,
+                                  id=comment_id, post_id=post_id)
+    if isinstance(comment, HttpResponse):
+        return comment
     if comment.author != request.user:
         return redirect('blog:post_detail', post_id=post_id)
 

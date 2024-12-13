@@ -30,3 +30,5 @@ class CommentForm(forms.ModelForm):
         if not text:
             raise forms.ValidationError("Комментарий не может быть пустым.")
         return text
+
+        
