@@ -7,6 +7,7 @@ from typing import Optional, Any
 from .models import Category, Location, Post, Comment
 
 admin.site.unregister(User)
+admin.site.unregister(Group)
 
 
 @admin.register(Location)
@@ -56,6 +57,3 @@ class CommentAdmin(admin.ModelAdmin):
     list_filter = ('created_at', 'post')
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
-
-
-admin.site.unregister(Group)

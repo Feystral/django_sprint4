@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+
 from .constants import MAX_FIELD_LENGTH, CUT_BOUNDARY_STR
 
 User = get_user_model()
@@ -8,6 +9,7 @@ User = get_user_model()
 
 class CreatedAtModel(models.Model):
     """Абстрактная модель с полем даты создания."""
+
     created_at = models.DateTimeField("Добавлено", auto_now_add=True)
 
     class Meta:
@@ -17,6 +19,7 @@ class CreatedAtModel(models.Model):
 
 class PublishedAndCreatedAtModel(CreatedAtModel):
     """Абстрактная модель с полями публикации и даты создания."""
+
     is_published = models.BooleanField(
         "Опубликовано",
         default=True,
