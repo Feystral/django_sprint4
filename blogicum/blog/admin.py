@@ -1,8 +1,9 @@
+from typing import Optional, Any
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group, User
 from django.utils.safestring import mark_safe
-from typing import Optional, Any
 
 from .models import Category, Location, Post, Comment
 
@@ -36,7 +37,7 @@ class PostAdmin(admin.ModelAdmin):
             return mark_safe(f'<img src="{obj.image.url}" width="80"'
                              'height="60" style="object-fit:cover;'
                              'border-radius:4px;">')
-        return "Нет изображения"
+        return 'Нет изображения'
     setattr(image_preview, 'short_description', 'Превью изображения')
 
 

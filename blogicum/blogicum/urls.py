@@ -4,10 +4,9 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf.urls import handler404, handler500
 
-from pages.views import PageNotFoundView
-from .views import UserRegistrationView
+from blog.views import UserRegistrationView
 
-handler404 = PageNotFoundView.as_view()
+handler404 = "pages.views.page_not_found_view"
 handler500 = "pages.views.internal_server_error"
 
 urlpatterns = [

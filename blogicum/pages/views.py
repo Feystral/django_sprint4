@@ -11,8 +11,8 @@ class RulesView(TemplateView):
     template_name = "pages/rules.html"
 
 
-class PageNotFoundView(TemplateView):
-    template_name = "pages/404.html"
+def page_not_found_view(request, exception=None):
+    return render(request, 'pages/404.html', status=404)
 
 
 def csrf_failure(request, reason=""):

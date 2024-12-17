@@ -14,7 +14,7 @@ class CreatedAtModel(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ['-created_at']
+        ordering = ("-created_at",)
 
 
 class PublishedAndCreatedAtModel(CreatedAtModel):
@@ -36,8 +36,10 @@ class Category(PublishedAndCreatedAtModel):
     slug = models.SlugField(
         "Идентификатор",
         unique=True,
-        help_text="Идентификатор страницы для URL; "
-                  "разрешены символы латиницы, цифры, дефис и подчёркивание."
+        help_text=(
+            "Идентификатор страницы для URL; "
+            "разрешены символы латиницы, цифры, дефис и подчёркивание."
+        )
     )
 
     class Meta:
@@ -67,8 +69,10 @@ class Post(PublishedAndCreatedAtModel):
     text = models.TextField("Текст")
     pub_date = models.DateTimeField(
         "Дата и время публикации",
-        help_text="Если установить дату и время в будущем"
-        " — можно делать отложенные публикации.",
+        help_text=(
+            "Если установить дату и время в будущем"
+            " — можно делать отложенные публикации."
+        ),
         default=timezone.now
     )
     category = models.ForeignKey(
@@ -102,7 +106,7 @@ class Post(PublishedAndCreatedAtModel):
     class Meta:
         verbose_name = "публикация"
         verbose_name_plural = "Публикации"
-        ordering = ['-pub_date']
+        ordering = ("-pub_date",)
 
     def __str__(self):
         return self.title[:CUT_BOUNDARY_STR]
@@ -129,7 +133,7 @@ class Comment(CreatedAtModel):
     class Meta(CreatedAtModel.Meta):
         verbose_name = "комментарий"
         verbose_name_plural = "Комментарии"
-        ordering = ['created_at']
+        ordering = ("created_at",)
 
     def __str__(self):
         return self.text[:CUT_BOUNDARY_STR]
