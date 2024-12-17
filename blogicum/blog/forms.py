@@ -1,7 +1,7 @@
-from django import forms 
+from django import forms
 from django.utils.timezone import now
 
-from .models import Post, Comment, Category 
+from .models import Post, Comment, Category
 
 
 class PostForm(forms.ModelForm):
