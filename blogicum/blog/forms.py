@@ -7,7 +7,7 @@ from .models import Post, Comment, Category
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        exclude = ['author', 'likes']
+        exclude = ('author', 'likes')
         widgets = {
             'pub_date': forms.DateTimeInput(
                 attrs={'type': 'datetime-local'},
@@ -27,7 +27,7 @@ class PostForm(forms.ModelForm):
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
-        fields = ['text']
+        fields = ('text',)
         widgets = {
             'text': forms.Textarea(attrs={'rows': 3}),
         }

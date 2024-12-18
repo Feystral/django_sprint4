@@ -15,8 +15,8 @@ from .constants import POSTS_PER_PAGE
 
 
 def index(request):
-    posts = filter_published_posts(Post.objects.all())
-    posts = annotate_and_select_related(posts)
+    posts = annotate_and_select_related(
+        filter_published_posts(Post.objects.all()))
 
     page_obj = paginate_queryset(posts, request, POSTS_PER_PAGE)
 
@@ -26,10 +26,8 @@ def index(request):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
-    if (post.pub_date > timezone.now() and post.author != request.user
-        or not post.category.is_published and post.author != request.user
-            or not post.is_published and post.author != request.user):
-        return render(request, 'pages/404.html', status=404)
+    if post.author != request.user:
+        post = get_object_or_404(filter_published_posts(Post.objects.all()))
 
     comments = post.comments.select_related('author').all()
 
@@ -63,7 +61,7 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts = annotate_and_select_related(author.posts)
 
-    if not (request.user == author):
+    if request.user != author:
         posts = filter_published_posts(posts)
 
     page_obj = paginate_queryset(posts, request, POSTS_PER_PAGE)
