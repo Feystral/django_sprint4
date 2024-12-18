@@ -2,7 +2,6 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
-from django.utils import timezone
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 
