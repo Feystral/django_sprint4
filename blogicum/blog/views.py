@@ -26,7 +26,8 @@ def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
     if post.author != request.user:
-        post = get_object_or_404(filter_published_posts(Post.objects.all()))
+        post = get_object_or_404(
+            filter_published_posts(Post.objects.all()), id=post_id)
 
     comments = post.comments.select_related('author').all()
 
